@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.572
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiffractionLossLib", "DiffractionLossLib.csproj", "{C7DAF064-9B6C-431B-A276-5292B0A24ACD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiffractionLossLib", "DiffractionLoss\DiffractionLossLib.csproj", "{C7DAF064-9B6C-431B-A276-5292B0A24ACD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gavaghan.Geodesy", "Gavaghan.Geodesy\Gavaghan.Geodesy.csproj", "{FEF5CAD3-7F38-4801-849E-2F4F94607ABD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,11 +17,15 @@ Global
 		{C7DAF064-9B6C-431B-A276-5292B0A24ACD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C7DAF064-9B6C-431B-A276-5292B0A24ACD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C7DAF064-9B6C-431B-A276-5292B0A24ACD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FEF5CAD3-7F38-4801-849E-2F4F94607ABD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FEF5CAD3-7F38-4801-849E-2F4F94607ABD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FEF5CAD3-7F38-4801-849E-2F4F94607ABD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FEF5CAD3-7F38-4801-849E-2F4F94607ABD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {F74A3990-00AD-40C5-8DD1-3A4B58A5E2F0}
+		SolutionGuid = {BBD9B1C5-85CF-49B2-95F7-DDDDBEA72C45}
 	EndGlobalSection
 EndGlobal

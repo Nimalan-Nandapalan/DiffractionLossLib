@@ -29,6 +29,10 @@
 .vs/
 
 # Build Results
-DiffractionLossLib/bin/
-DiffractionLossLib/obj/
-DiffractionLossLib/packages/
+DiffractionLoss/bin/
+DiffractionLoss/obj/
+DiffractionLoss/packages/
+packages/
+
+Gavaghan.Geodesy/bin/
+Gavaghan.Geodesy/obj/
