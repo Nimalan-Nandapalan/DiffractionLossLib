@@ -8,17 +8,11 @@
 *.obj
 
 # Precompiled Headers
-*.gch
-*.pch
 
 # Compiled Dynamic libraries
 *.so
 *.dylib
 *.dll
-
-# Fortran module files
-*.mod
-*.smod
 
 # Compiled Static libraries
 *.lai
@@ -30,3 +24,11 @@
 *.exe
 *.out
 *.app
+
+# Visual Studio files
+.vs/
+
+# Build Results
+DiffractionLossLib/bin/
+DiffractionLossLib/obj/
+DiffractionLossLib/packages/

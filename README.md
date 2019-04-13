@@ -1,2 +1,2 @@
 # DiffractionLossLib
-A library to assist with difrraction loss calculations
+A library to assist with difrraction of loss calculations
