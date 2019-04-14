@@ -4,8 +4,19 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 15.0.28307.572
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiffractionLossLib", "DiffractionLoss\DiffractionLossLib.csproj", "{C7DAF064-9B6C-431B-A276-5292B0A24ACD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AC8C7E10-FC08-4DAF-9DC9-D6E36138186F} = {AC8C7E10-FC08-4DAF-9DC9-D6E36138186F}
+		{FEF5CAD3-7F38-4801-849E-2F4F94607ABD} = {FEF5CAD3-7F38-4801-849E-2F4F94607ABD}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gavaghan.Geodesy", "Gavaghan.Geodesy\Gavaghan.Geodesy.csproj", "{FEF5CAD3-7F38-4801-849E-2F4F94607ABD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SRTM", "SRTM\SRTM.csproj", "{AC8C7E10-FC08-4DAF-9DC9-D6E36138186F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "UnitTests\UnitTests.csproj", "{0960C992-2085-4D29-B5C8-E9672532143F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AC8C7E10-FC08-4DAF-9DC9-D6E36138186F} = {AC8C7E10-FC08-4DAF-9DC9-D6E36138186F}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +32,14 @@ Global
 		{FEF5CAD3-7F38-4801-849E-2F4F94607ABD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FEF5CAD3-7F38-4801-849E-2F4F94607ABD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FEF5CAD3-7F38-4801-849E-2F4F94607ABD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC8C7E10-FC08-4DAF-9DC9-D6E36138186F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC8C7E10-FC08-4DAF-9DC9-D6E36138186F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC8C7E10-FC08-4DAF-9DC9-D6E36138186F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC8C7E10-FC08-4DAF-9DC9-D6E36138186F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0960C992-2085-4D29-B5C8-E9672532143F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0960C992-2085-4D29-B5C8-E9672532143F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0960C992-2085-4D29-B5C8-E9672532143F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0960C992-2085-4D29-B5C8-E9672532143F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

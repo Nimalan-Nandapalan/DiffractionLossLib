@@ -27,12 +27,9 @@
 
 # Visual Studio files
 .vs/
+*.csproj.user
 
 # Build Results
-DiffractionLoss/bin/
-DiffractionLoss/obj/
-DiffractionLoss/packages/
-packages/
-
-Gavaghan.Geodesy/bin/
-Gavaghan.Geodesy/obj/
+*/bin/
+*/obj/
+*packages/

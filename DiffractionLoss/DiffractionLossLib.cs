@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using ExcelDna.Integration;
 
 using Gavaghan.Geodesy;
+using SRTM;
 
 namespace DiffractionLossLib
 {
@@ -53,7 +54,13 @@ namespace DiffractionLossLib
             return dest.Latitude.Degrees;
         }
 
+        [ExcelFunction(Description = "Get height from SRTM data")]
+        public static int GetHeight(double lat, double lon)
+        {
+            var srtmData = new SRTMData(@"C:\temp\srtm-cache");
 
+            return srtmData.GetElevation(lat, lon) ?? -1;
+        }
 
     }
 }
