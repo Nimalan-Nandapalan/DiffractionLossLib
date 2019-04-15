@@ -8,7 +8,7 @@ using Gavaghan.Geodesy;
 
 namespace DiffractionLossLib
 {
-    class Point
+    public class Point
     {
         GlobalCoordinates coordinate;
         int? height;

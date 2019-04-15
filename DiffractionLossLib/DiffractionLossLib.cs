@@ -9,9 +9,9 @@ using SRTM;
 
 namespace DiffractionLossLib
 {
-    class DiffractionLossCalculator
+    public class DiffractionLossCalculator
     {
-        private Point[] points;
+        private List<Point> points;
 
         private GeodeticCalculator geoCalc;
         private Ellipsoid ellipsoid;
@@ -27,7 +27,7 @@ namespace DiffractionLossLib
         }
 
         // distance between points in meters
-        public Point[] CalculateIntermediatePoints(GlobalCoordinates start, GlobalCoordinates end, double distanceBetweenPoints)
+        public List<Point> CalculateIntermediatePoints(GlobalCoordinates start, GlobalCoordinates end, double distanceBetweenPoints)
         {
             var startHeight = srtmData.GetElevation(start.Latitude.Degrees, start.Longitude.Degrees);
             points.Append(new Point(start, startHeight));
@@ -37,9 +37,9 @@ namespace DiffractionLossLib
 
             Angle endBearing;
 
-            GlobalCoordinates dest = geoCalc.CalculateEndingGlobalCoordinates(reference, start, azimuth, distance, out endBearing);
+            GlobalCoordinates dest = geoCalc.CalculateEndingGlobalCoordinates(ellipsoid, start, path.Azimuth.Degrees, distanceBetweenPoints, out endBearing);
 
-            return dest.Longitude.Degrees;
+            //dest.Longitude.Degrees;
 
             return points;
         }
