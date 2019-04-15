@@ -8,10 +8,12 @@ using System.Windows.Forms;
 using ExcelDna.Integration;
 using Excel = Microsoft.Office.Interop.Excel;
 
-using DiffractionLossExcell.Helpers;
+using DiffractionLossExcell.Helpers.ExcelDNA;
 
 using Gavaghan.Geodesy;
 using SRTM;
+
+using DiffractionLossLib;
 
 namespace DiffractionLossExcel
 {
@@ -19,11 +21,7 @@ namespace DiffractionLossExcel
     public class DiffractionLossExcell
     {
         private static string foo { get; set; }
-
-        public DiffractionLossExcell()
-        {
-            foo = "Potato";
-        }
+        private static DiffractionLossCalculator diffLossCalc;
 
         [ExcelFunction(Description = "My first .NET function")]
         public static string SayHello(string name)

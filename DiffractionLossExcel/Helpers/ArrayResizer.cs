@@ -8,7 +8,7 @@ using ExcelDna.Integration;
 
 // taken from https://github.com/Excel-DNA/ExcelDna/blob/master/Distribution/Samples/ArrayResizer.dna
 
-namespace DiffractionLossExcell.Helpers
+namespace DiffractionLossExcell.Helpers.ExcelDNA
 {
     // This class defines a few test functions that can be used to explore the automatic array resizing.
     public static class ResizeTestFunctions
