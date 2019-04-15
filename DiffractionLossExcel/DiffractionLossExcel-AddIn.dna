@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<DnaLibrary Name="DiffractionLossLib Add-In" RuntimeVersion="v4.0" xmlns="http://schemas.excel-dna.net/addin/2018/05/dnalibrary">
-  <ExternalLibrary Path="DiffractionLossLib.dll" ExplicitExports="false" LoadFromBytes="true" Pack="true" IncludePdb="false" />
+<DnaLibrary Name="DiffractionLossExcel Add-In" RuntimeVersion="v4.0" xmlns="http://schemas.excel-dna.net/addin/2018/05/dnalibrary">
+  <ExternalLibrary Path="DiffractionLossExcell.dll" ExplicitExports="false" LoadFromBytes="true" Pack="true" IncludePdb="false" />
 
   <!--
        The RuntimeVersion attribute above allows two settings:

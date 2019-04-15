@@ -8,24 +8,48 @@ using System.Windows.Forms;
 using ExcelDna.Integration;
 using Excel = Microsoft.Office.Interop.Excel;
 
+using DiffractionLossExcell.Helpers;
+
 using Gavaghan.Geodesy;
 using SRTM;
 
-namespace DiffractionLossLib
+namespace DiffractionLossExcel
 {
-    public class DiffractionLoss
+
+    public class DiffractionLossExcell
     {
-        private GeodeticCalculator geoCalc;
-        private bool recomputeRequired;
+        private static string foo { get; set; }
+
+        public DiffractionLossExcell()
+        {
+            foo = "Potato";
+        }
 
         [ExcelFunction(Description = "My first .NET function")]
         public static string SayHello(string name)
         {
-            MessageBox.Show("Hello " + name);
+            MessageBox.Show($"Hello {name}");
 
             return "Hello " + name;
         }
 
+        [ExcelFunction(Description = "My first .NET function")]
+        public static string FooA(string name)
+        {
+            MessageBox.Show($"foo is {foo}");
+
+            foo = "potato";
+
+            return foo;
+        }
+
+        [ExcelFunction(Description = "My first .NET function")]
+        public static string FooB(string name)
+        {
+            foo = "not a Potato";
+
+            return foo;
+        }
 
         [ExcelFunction(Description = "Sets cell below to 'Potato'",  IsMacroType = true)]
         public static void Potato( [ExcelArgument(AllowReference = true)] object _arg)
@@ -44,23 +68,21 @@ namespace DiffractionLossLib
             return;
         }
                
-        [ExcelFunction(Description = "Array value function", IsMacroType = true))]
-        public static double[,] MakeList()//object _list)
+        [ExcelFunction(Description = "Array value function")]
+        public static object MakeList()//object _list)
         {
             //var list = _list as double[];
-            double[,] list = new double[2,12];
+            object[,] list = new object[12,2];
 
             //for (var i = 0; i < list.Length; i++)
             for (int i = 0; i < 12; i++)
             {
                 //list[i] = list[i] * list[i]; 
-                list[0, i] = i;
-                list[1, i] = i * i;
+                list[i, 0] = i;
+                list[i, 1] = i * i;
             }
 
-            var output = XlCall.Excel(XlCall.xlUDF, "Resize", list);
-
-            return list;
+            return ArrayResizer.Resize(list);
         }
 
         [ExcelFunction(Description = "Get Azimuth between two points")]
