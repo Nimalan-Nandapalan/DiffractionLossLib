@@ -110,7 +110,7 @@ namespace DiffractionLossExcel
             GlobalCoordinates start = new GlobalCoordinates(new Angle(txLat), new Angle(txLon));
             GlobalCoordinates end = new GlobalCoordinates(new Angle(rxLat), new Angle(rxLon));
 
-            var points = diffLossCalc.CalculateIntermediatePoints(start, end);
+            var points = diffLossCalc.GenerateIntermediateProfilePoints(start, end);
             var pointsArray = new object[points.Count, 3];
 
             for (int i = 0; i < points.Count; i++)
@@ -184,6 +184,28 @@ namespace DiffractionLossExcel
 
             return dest.Latitude.Degrees;
         }
+
+        [ExcelFunction(Description = "Next Coordinates based on Vincenty's Algorithm")]
+        public static object NextPoint(double lat, double lon, double az, double distance)
+        {
+            GeodeticCalculator geoCalc = new GeodeticCalculator();
+            Ellipsoid reference = Ellipsoid.WGS84;
+
+            GlobalCoordinates start = new GlobalCoordinates(new Angle(lat), new Angle(lon));
+            Angle azimuth = new Angle(az);
+
+            Angle endBearing;
+
+            GlobalCoordinates dest = geoCalc.CalculateEndingGlobalCoordinates(reference, start, azimuth, distance, out endBearing);
+
+            var point = new object[1, 2];
+
+            point[0, 0] = dest.Latitude.Degrees;
+            point[0, 1] = dest.Longitude.Degrees;
+
+            return ArrayResizer.Resize(point);
+        }
+
         #endregion
 
         #region SRTM functions
