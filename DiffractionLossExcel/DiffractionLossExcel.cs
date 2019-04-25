@@ -82,14 +82,6 @@ namespace DiffractionLossExcel
         #endregion
 
         #region DiffractionLossLib functions
-        [ExcelFunction(Description = "get distance between points configuration")]
-        public static double GetConfigurationDistance()
-        {
-            if (diffLossCalc == null)
-                diffLossCalc = new DiffractionLossCalculator();
-
-            return diffLossCalc.GetDistanceBetweenPoints();
-        }
 
         [ExcelFunction(Description = "Generate a list of points beteen two points at fixed distances")]
         public static object GetProfilePoints(double txLat, double txLon, double rxLat, double rxLon)
@@ -122,6 +114,21 @@ namespace DiffractionLossExcel
             
             return ArrayResizer.Resize(pointsArray);
         }
+
+        [ExcelFunction(Description = "Bullington Method")]
+        public static double CalculateDiffractionLoss(double txLat, double txLon, double TxAntennaeHeight, double rxLat, double rxLon, double RxAntennaeHeight, double frequency)
+        {
+            if (diffLossCalc == null)
+                diffLossCalc = new DiffractionLossCalculator();
+
+            GlobalCoordinates start = new GlobalCoordinates(new Angle(txLat), new Angle(txLon));
+            GlobalCoordinates end = new GlobalCoordinates(new Angle(rxLat), new Angle(rxLon));
+
+            double result = diffLossCalc.CalculateDiffractionLoss(start, TxAntennaeHeight, end, RxAntennaeHeight, frequency);
+
+            return result;
+        }
+
         #endregion
 
         #region Geodetic functions
