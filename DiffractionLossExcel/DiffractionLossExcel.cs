@@ -217,9 +217,9 @@ namespace DiffractionLossExcel
 
         #region SRTM functions
         [ExcelFunction(Description = "Get height from SRTM data")]
-        public static int GetHeight(double lat, double lon)
+        public static int GetHeight(double lat, double lon, string path)
         {
-            var srtmData = new SRTMData(@"C:\temp\srtm-cache");
+            var srtmData = new SRTMData(path);
 
             return srtmData.GetElevation(lat, lon) ?? -1;
         }

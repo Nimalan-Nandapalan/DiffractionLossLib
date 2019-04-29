@@ -12,25 +12,29 @@ namespace DiffractionLossLib
     {
         #region Members
 
-        private Configuration config;
+        protected Configuration config;
 
-        private GeodeticCalculator geoCalc;
-        private Ellipsoid ellipsoid;
-        private Ellipsoid defaultEllipsoid = Ellipsoid.WGS84;
-        private double distanceBetweenPoints;
-        private const double defaultDistanceBetweenPoints = 100;
+        protected LibraryMode mode = LibraryMode.Normal;
 
-        private SRTMData srtmData;
-        private const string defaultSrtmCache = @"C:\temp\srtm-cache";
+        protected GeodeticCalculator geoCalc;
+        protected Ellipsoid ellipsoid;
+        protected Ellipsoid defaultEllipsoid = Ellipsoid.WGS84;
+        protected double distanceBetweenPoints;
+        protected const double defaultDistanceBetweenPoints = 100;
 
-        private double effectiveEarthRadius;
-        private const double defaultEffectiveEarthRadius = 8495;
+        protected double distanceBetweenLastPoints;
 
-        private const double bullingtonCutoff = -0.78;
+        protected SRTMData srtmData;
+        protected const string defaultSrtmCache = @"C:\temp\srtm-cache";
 
-        private List<Point> points;
+        protected double effectiveEarthRadius;
+        protected const double defaultEffectiveEarthRadius = 8495;
 
-        GeodeticCurve path;
+        protected const double bullingtonCutoff = -0.78;
+
+        protected List<Point> points;
+
+        protected GeodeticCurve path;
 
         #endregion
 
@@ -165,6 +169,18 @@ namespace DiffractionLossLib
         {
             GenerateIntermediateProfilePoints(Tx, Rx);
 
+            return DoCalculations(TxAntennaeHeight, RxAntennaeHeight, frequency);
+        }
+
+
+        #endregion
+
+
+
+        #region Equation Step Functions
+
+        protected double DoCalculations(double TxAntennaeHeight, double RxAntennaeHeight, double frequency)
+        {
             // equation 49
             double S_tim = GetLargestIntermediateSlopeFromTx(TxAntennaeHeight);
 
@@ -200,29 +216,20 @@ namespace DiffractionLossLib
                 double V_b = GetBullingtonPointDiffractionParameter(TxAntennaeHeight, RxAntennaeHeight, S_tim, d_b, frequency);
 
                 // equation 31/56
-                L_uc = GetBullingtonMethodLoss(V_b);
+                L_uc = (V_b > bullingtonCutoff) ? GetBullingtonMethodLoss(V_b) : 0.0;
             }
-                       
+
             // equation 57
             L_b = GetBullingtonMethodDiffractionLoss(L_uc);
 
-            return L_b;
 
-
-            // Developer's Note: I'm unsure of the calculations from this point
-
+            //TODO:
             // calculate L_bs
 
             // calculate L_sph
 
+            return L_b;
         }
-
-
-        #endregion
-
-
-
-        #region Equation Step Functions
 
         public List<Point> GenerateIntermediateProfilePoints(GlobalCoordinates start, GlobalCoordinates end)
         {
@@ -254,7 +261,7 @@ namespace DiffractionLossLib
         // equation numbers refer to https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.526-14-201801-I!!PDF-E.pdf
 
         // equation 49
-        private double GetLargestIntermediateSlopeFromTx(double TxAntennaeHeight)
+        protected double GetLargestIntermediateSlopeFromTx(double TxAntennaeHeight)
         {
             // slope = m/km
             double? S_tim = null; ;
@@ -280,7 +287,7 @@ namespace DiffractionLossLib
         }
 
         // equation 50
-        private double GetTotalPathSlope(double TxAntennaeHeight, double RxAntennaeHeight)
+        protected double GetTotalPathSlope(double TxAntennaeHeight, double RxAntennaeHeight)
         {
             // first point is Tx
             double h_ts = Convert.ToDouble(points.First().height ?? 0.0) + TxAntennaeHeight;
@@ -296,7 +303,7 @@ namespace DiffractionLossLib
         }
 
         // equation 51
-        private double GetHighestDiffractionParameter(double TxAntennaeHeight, double RxAntennaeHeight, double frequency)
+        protected double GetHighestDiffractionParameter(double TxAntennaeHeight, double RxAntennaeHeight, double frequency)
         {
             double? V_max = null;
 
@@ -325,17 +332,17 @@ namespace DiffractionLossLib
 
             return V_max ?? 0;
         }
-        
+
         // equation 31/52
-        private double GetBullingtonMethodLoss(double v)
+        protected double GetBullingtonMethodLoss(double v)
         {
-            double J = 6.9 + (20.0 * Math.Log( Math.Sqrt( Math.Pow(v - 0.1, 2.0) + 1 ) + v - 0.1 ));
+            double J = 6.9 + (20.0 * Math.Log10( Math.Sqrt( Math.Pow((v - 0.1), 2.0) + 1.0 ) + v - 0.1 ));
 
             return J;
         }
 
         // equation 53
-        private double GetLargestIntermediateSlopeFromRx(double RxAntennaeHeight)
+        protected double GetLargestIntermediateSlopeFromRx(double RxAntennaeHeight)
         {
             // slope = m/km
             double? S_rim = null;
@@ -355,8 +362,15 @@ namespace DiffractionLossLib
                 double d_i;
                 if (i == points.Count - 2)
                 {
-                    GeodeticCurve subPath = geoCalc.CalculateGeodeticCurve(ellipsoid, points[i].coordinate, points.Last().coordinate);
-                    d_i = subPath.EllipsoidalDistance / 1000.0;
+                    if (mode == LibraryMode.Normal)
+                    {
+                        GeodeticCurve subPath = geoCalc.CalculateGeodeticCurve(ellipsoid, points[i].coordinate, points.Last().coordinate);
+                        d_i = subPath.EllipsoidalDistance / 1000.0;
+                    }
+                    else
+                    {
+                        d_i = distanceBetweenLastPoints / 1000.0;
+                    }
                 }
                 else
                 {
@@ -372,7 +386,7 @@ namespace DiffractionLossLib
         }
 
         // equation 54
-        private double GetDistanceFromTxToB(double TxAntennaeHeight, double RxAntennaeHeight, double S_tim, double S_rim)
+        protected double GetDistanceFromTxToB(double TxAntennaeHeight, double RxAntennaeHeight, double S_tim, double S_rim)
         {            
             // first point is Tx
             double h_ts = Convert.ToDouble(points.First().height ?? 0.0) + TxAntennaeHeight;
@@ -388,7 +402,7 @@ namespace DiffractionLossLib
         }
 
         // equation 55
-        private double GetBullingtonPointDiffractionParameter(double TxAntennaeHeight, double RxAntennaeHeight, double S_tim, double d_b, double frequency)
+        protected double GetBullingtonPointDiffractionParameter(double TxAntennaeHeight, double RxAntennaeHeight, double S_tim, double d_b, double frequency)
         {
             // first point is Tx
             double h_ts = Convert.ToDouble(points.First().height ?? 0.0) + TxAntennaeHeight;
@@ -407,31 +421,33 @@ namespace DiffractionLossLib
         }
 
         // equation 57
-        private double GetBullingtonMethodDiffractionLoss(double L_uc)
+        protected double GetBullingtonMethodDiffractionLoss(double L_uc)
         {
             double L_b;
 
             double d = path.EllipsoidalDistance / 1000.0;
 
-            L_b = L_uc + (1.0 - Math.Exp(-L_uc / 6.0)) * (10.0 + (0.02 * d));
+            L_b = L_uc + ((1.0 - Math.Exp(-L_uc / 6.0)) * (10.0 + (0.02 * d)));
 
             return L_b;
         }
 
         #endregion
 
+
+
         #region Standard Maths Equations
 
-        double GetSlope(double h_s, double h_i, double C_e, double d_i, double d, double d_s)
+        protected double GetSlope(double h_s, double h_i, double C_e, double d_i, double d, double d_s)
         {
             return (h_i + (500.0 * C_e * d_i * (d - d_i)) - h_s) / d_s;
         }
 
-        double GetDiffractionParameter(double h_i, double h_ts, double h_rs, double d, double d_i, double buldge, double f)
+        protected double GetDiffractionParameter(double h_i, double h_ts, double h_rs, double d, double d_i, double buldge, double f)
         {
-            double rayHeight = (h_ts * (d - d_i) + (h_rs * d_i)) / d;
+            double rayHeight = ((h_ts * (d - d_i)) + (h_rs * d_i)) / d;
 
-            double oneOnF2 = Math.Sqrt(0.002 * d / (f * d_i * (d - d_i)));
+            double oneOnF2 = Math.Sqrt((0.002 * d) / (f * d_i * (d - d_i)));
 
             double v = (h_i + buldge - rayHeight) * oneOnF2;
 
@@ -441,16 +457,23 @@ namespace DiffractionLossLib
         #endregion
 
 
+
         #region Member Functions
 
-
-        private void UseDefaultValues()
+        protected void UseDefaultValues()
         {
             distanceBetweenPoints = defaultDistanceBetweenPoints;
             ellipsoid = defaultEllipsoid;
             srtmData = new SRTMData(defaultSrtmCache);
             effectiveEarthRadius = defaultEffectiveEarthRadius;
         }
+
+        #endregion
+
+
+        #region Member Types
+
+        protected enum LibraryMode { Normal, Test};
 
         #endregion
     }
