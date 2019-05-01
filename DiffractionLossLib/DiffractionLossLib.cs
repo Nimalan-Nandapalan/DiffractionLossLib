@@ -32,8 +32,6 @@ namespace DiffractionLossLib
 
         protected const double bullingtonCutoff = -0.78;
 
-        protected List<Point> points;
-
         protected GeodeticCurve path;
 
         #endregion
@@ -45,8 +43,6 @@ namespace DiffractionLossLib
         public DiffractionLossCalculator()
         {
             geoCalc = new GeodeticCalculator();
-
-            points = new List<Point>();
 
             try
             {
@@ -84,7 +80,6 @@ namespace DiffractionLossLib
                     }
                     catch
                     {
-
                         srtmData = new SRTMData(defaultSrtmCache);
                     }
                 }
@@ -167,9 +162,13 @@ namespace DiffractionLossLib
 
         public double CalculateDiffractionLoss(GlobalCoordinates Tx, double TxAntennaeHeight, GlobalCoordinates Rx, double RxAntennaeHeight, double frequency)
         {
-            GenerateIntermediateProfilePoints(Tx, Rx);
+            List<Point> points = GenerateIntermediateProfilePoints(Tx, Rx);
 
-            return DoCalculations(TxAntennaeHeight, RxAntennaeHeight, frequency);
+            double L_ba = CalculateActualTerrain(points, TxAntennaeHeight, RxAntennaeHeight, frequency);
+
+            double L_bs = CalculateSmoothProfile(points, TxAntennaeHeight, RxAntennaeHeight, frequency);
+
+            return L_ba;
         }
 
 
@@ -179,13 +178,13 @@ namespace DiffractionLossLib
 
         #region Equation Step Functions
 
-        protected double DoCalculations(double TxAntennaeHeight, double RxAntennaeHeight, double frequency)
+        protected double CalculateActualTerrain(List<Point> points, double TxAntennaeHeight, double RxAntennaeHeight, double frequency)
         {
             // equation 49
-            double S_tim = GetLargestIntermediateSlopeFromTx(TxAntennaeHeight);
+            double S_tim = GetLargestIntermediateSlopeFromTx(points, TxAntennaeHeight);
 
             // equation 50
-            double S_tr = GetTotalPathSlope(TxAntennaeHeight, RxAntennaeHeight);
+            double S_tr = GetTotalPathSlope(points, TxAntennaeHeight, RxAntennaeHeight);
 
             double L_uc;
 
@@ -196,7 +195,7 @@ namespace DiffractionLossLib
                 // case 1: the path is line of sight
 
                 // equation 51
-                double V_max = GetHighestDiffractionParameter(TxAntennaeHeight, RxAntennaeHeight, frequency);
+                double V_max = GetHighestDiffractionParameter(points, TxAntennaeHeight, RxAntennaeHeight, frequency);
 
                 // equation 31/52
                 L_uc = (V_max > bullingtonCutoff) ? GetBullingtonMethodLoss(V_max) : 0.0;
@@ -206,14 +205,14 @@ namespace DiffractionLossLib
                 // case 2: the path is trans-horizon
 
                 //equation 53
-                double S_rim = GetLargestIntermediateSlopeFromRx(RxAntennaeHeight);
+                double S_rim = GetLargestIntermediateSlopeFromRx(points, RxAntennaeHeight);
 
                 // equation 54
                 // d_b is distance from Tx to B in kilometers
-                double d_b = GetDistanceFromTxToB(TxAntennaeHeight, RxAntennaeHeight, S_tim, S_rim);
+                double d_b = GetDistanceFromTxToB(points, TxAntennaeHeight, RxAntennaeHeight, S_tim, S_rim);
 
                 // equation 55
-                double V_b = GetBullingtonPointDiffractionParameter(TxAntennaeHeight, RxAntennaeHeight, S_tim, d_b, frequency);
+                double V_b = GetBullingtonPointDiffractionParameter(points, TxAntennaeHeight, RxAntennaeHeight, S_tim, d_b, frequency);
 
                 // equation 31/56
                 L_uc = (V_b > bullingtonCutoff) ? GetBullingtonMethodLoss(V_b) : 0.0;
@@ -222,18 +221,85 @@ namespace DiffractionLossLib
             // equation 57
             L_b = GetBullingtonMethodDiffractionLoss(L_uc);
 
-
-            //TODO:
-            // calculate L_bs
-
-            // calculate L_sph
-
             return L_b;
+        }
+
+        protected double CalculateSmoothProfile(List<Point> points, double TxAntennaeHeight, double RxAntennaeHeight, double frequency)
+        {
+            // equation 58
+            double v_1 = GetV_1(points);
+
+            // equation 59
+            double v_2 = GetV_2(points);
+
+            // equation 60a
+            double h_stip = GetTransmitterInitialProvisionalHeight(v_1, v_2);
+
+            // equation 60b
+            double h_srip = GetReceiverInitialProvisionalHeight(v_1, v_2);
+
+            // equation 61a,b,c,d
+            (double h_obs, double a_obt, double a_obr) = GetObstructionAndElevations(points, TxAntennaeHeight, RxAntennaeHeight);
+
+            double h_stp;
+            double h_srp;
+
+            if (h_obs <= 0.0)
+            {
+                // equation 62a
+                h_stp = h_stip;
+
+                // equation 62b
+                h_srp = h_srip;
+            }
+            else
+            {
+                //equation 62e
+                double g_t = a_obt / (a_obt + a_obr);
+
+                //equation 62f
+                double g_r = a_obr / (a_obt + a_obr);
+
+                //equation 62c
+                h_stp = h_stip - (h_obs * g_t);
+
+                //equation 62d
+                h_srp = h_srip - (h_obs * g_r);
+            }
+
+            // equation 63a,b
+            double h_1 = points.First().height ?? 0.0;
+            double h_st = (h_stp > h_1) ? h_1 : h_stp;
+
+            // equation 63c,d
+            double h_n = points.Last().height ?? 0.0;
+            double h_sr = (h_srp > h_n) ? h_n : h_srp;
+
+            // equation 64a
+            double h_ts = (points.First().height ?? 0.0) + TxAntennaeHeight;
+            double h_mts = h_ts - h_st;      
+
+            // equation 64b
+            double h_rs = (points.Last().height ?? 0.0) + RxAntennaeHeight;
+            double h_mrs = h_rs - h_sr;
+
+            // create the smooth profile points
+            List<Point> smoothProfilePoints = new List<Point>();
+            for (int i = 0; i < points.Count; i++)
+            {
+                smoothProfilePoints.Add(new Point(points[i].coordinate, 0));
+            }
+            smoothProfilePoints.First().height = h_mts;
+            smoothProfilePoints.Last().height = h_mrs;
+
+            double L_bs = CalculateActualTerrain(smoothProfilePoints, 0.0, 0.0, frequency);
+
+            return L_bs;
         }
 
         public List<Point> GenerateIntermediateProfilePoints(GlobalCoordinates start, GlobalCoordinates end)
         {
-            points.Clear();
+            List<Point> points = new List<Point>(); 
 
             int? startHeight = srtmData.GetElevation(start.Latitude.Degrees, start.Longitude.Degrees);
             points.Add(new Point(start, startHeight));
@@ -261,13 +327,13 @@ namespace DiffractionLossLib
         // equation numbers refer to https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.526-14-201801-I!!PDF-E.pdf
 
         // equation 49
-        protected double GetLargestIntermediateSlopeFromTx(double TxAntennaeHeight)
+        protected double GetLargestIntermediateSlopeFromTx(List<Point> points, double TxAntennaeHeight)
         {
             // slope = m/km
             double? S_tim = null; ;
 
             // first point is Tx
-            double h_ts = Convert.ToDouble(points.First().height ?? 0) + TxAntennaeHeight;
+            double h_ts = (points.First().height ?? 0) + TxAntennaeHeight;
 
             double d = path.EllipsoidalDistance / 1000.0;
             double C_e = 1.0 / effectiveEarthRadius;
@@ -275,8 +341,8 @@ namespace DiffractionLossLib
             // intermediate points are 1 .. n-2, 0 is Tx and n-1 is Rx
             for (int i = 1; i < points.Count - 1; i++)
             {
-                double h_i = Convert.ToDouble(points[i].height ?? 0.0);
-                double d_i = (double)i * distanceBetweenPoints / 1000.0;
+                double h_i = points[i].height ?? 0.0;
+                double d_i = i * distanceBetweenPoints / 1000.0;
 
                 double S_i = GetSlope(h_ts, h_i, C_e, d_i, d, d_i);
 
@@ -287,13 +353,13 @@ namespace DiffractionLossLib
         }
 
         // equation 50
-        protected double GetTotalPathSlope(double TxAntennaeHeight, double RxAntennaeHeight)
+        protected double GetTotalPathSlope(List<Point> points, double TxAntennaeHeight, double RxAntennaeHeight)
         {
             // first point is Tx
-            double h_ts = Convert.ToDouble(points.First().height ?? 0.0) + TxAntennaeHeight;
+            double h_ts = (points.First().height ?? 0.0) + TxAntennaeHeight;
 
             // last point is Rx
-            double h_rs = Convert.ToDouble(points.Last().height ?? 0.0) + RxAntennaeHeight;
+            double h_rs = (points.Last().height ?? 0.0) + RxAntennaeHeight;
 
             double d = path.EllipsoidalDistance / 1000.0;
 
@@ -303,15 +369,15 @@ namespace DiffractionLossLib
         }
 
         // equation 51
-        protected double GetHighestDiffractionParameter(double TxAntennaeHeight, double RxAntennaeHeight, double frequency)
+        protected double GetHighestDiffractionParameter(List<Point> points, double TxAntennaeHeight, double RxAntennaeHeight, double frequency)
         {
             double? V_max = null;
 
             // first point is Tx
-            double h_ts = Convert.ToDouble(points.First().height ?? 0.0) + TxAntennaeHeight;
+            double h_ts = (points.First().height ?? 0.0) + TxAntennaeHeight;
 
             // last point is Rx
-            double h_rs = Convert.ToDouble(points.Last().height ?? 0.0) + RxAntennaeHeight;
+            double h_rs = (points.Last().height ?? 0.0) + RxAntennaeHeight;
 
             double d = path.EllipsoidalDistance / 1000.0;
             double C_e = 1.0 / effectiveEarthRadius;
@@ -320,8 +386,8 @@ namespace DiffractionLossLib
             // intermediate points are 1 .. n-2, 0 is Tx and n-1 is Rx
             for (int i = 1; i < points.Count - 1; i++)
             {
-                double h_i = Convert.ToDouble(points[i].height ?? 0.0);
-                double d_i = (double)i * distanceBetweenPoints / 1000.0;
+                double h_i = points[i].height ?? 0.0;
+                double d_i = i * distanceBetweenPoints / 1000.0;
 
                 double buldge = (500.0 * C_e * d_i * (d - d_i));
 
@@ -342,13 +408,13 @@ namespace DiffractionLossLib
         }
 
         // equation 53
-        protected double GetLargestIntermediateSlopeFromRx(double RxAntennaeHeight)
+        protected double GetLargestIntermediateSlopeFromRx(List<Point> points, double RxAntennaeHeight)
         {
             // slope = m/km
             double? S_rim = null;
 
             // first point is Tx
-            double h_rs = Convert.ToDouble(points.Last().height ?? 0.0) + RxAntennaeHeight;
+            double h_rs = (points.Last().height ?? 0.0) + RxAntennaeHeight;
 
             double d = path.EllipsoidalDistance / 1000.0;
             double C_e = 1.0 / effectiveEarthRadius;
@@ -356,7 +422,7 @@ namespace DiffractionLossLib
             // intermediate points are 1 .. n-2, 0 is Tx and n-1 is Rx
             for (int i = 1; i < points.Count - 1; i++)
             {
-                double h_i = Convert.ToDouble(points[i].height ?? 0.0);
+                double h_i = (points[i].height ?? 0.0);
 
                 // d_(n-2) will likely be less than distanceBetweenPoints from Rx
                 double d_i;
@@ -374,7 +440,7 @@ namespace DiffractionLossLib
                 }
                 else
                 {
-                    d_i = (double)i * distanceBetweenPoints / 1000.0;
+                    d_i = i * distanceBetweenPoints / 1000.0;
                 }
 
                 double S_i = GetSlope(h_rs, h_i, C_e, d_i, d, (d - d_i));
@@ -384,15 +450,15 @@ namespace DiffractionLossLib
 
             return S_rim ?? 0;
         }
-
+        
         // equation 54
-        protected double GetDistanceFromTxToB(double TxAntennaeHeight, double RxAntennaeHeight, double S_tim, double S_rim)
+        protected double GetDistanceFromTxToB(List<Point> points, double TxAntennaeHeight, double RxAntennaeHeight, double S_tim, double S_rim)
         {            
             // first point is Tx
-            double h_ts = Convert.ToDouble(points.First().height ?? 0.0) + TxAntennaeHeight;
+            double h_ts = (points.First().height ?? 0.0) + TxAntennaeHeight;
 
             // last point is Rx
-            double h_rs = Convert.ToDouble(points.Last().height ?? 0.0) + RxAntennaeHeight;
+            double h_rs = (points.Last().height ?? 0.0) + RxAntennaeHeight;
 
             double d = path.EllipsoidalDistance / 1000.0;
 
@@ -402,13 +468,13 @@ namespace DiffractionLossLib
         }
 
         // equation 55
-        protected double GetBullingtonPointDiffractionParameter(double TxAntennaeHeight, double RxAntennaeHeight, double S_tim, double d_b, double frequency)
+        protected double GetBullingtonPointDiffractionParameter(List<Point> points, double TxAntennaeHeight, double RxAntennaeHeight, double S_tim, double d_b, double frequency)
         {
             // first point is Tx
-            double h_ts = Convert.ToDouble(points.First().height ?? 0.0) + TxAntennaeHeight;
+            double h_ts = (points.First().height ?? 0.0) + TxAntennaeHeight;
 
             // last point is Rx
-            double h_rs = Convert.ToDouble(points.Last().height ?? 0.0) + RxAntennaeHeight;
+            double h_rs = (points.Last().height ?? 0.0) + RxAntennaeHeight;
 
             double d = path.EllipsoidalDistance / 1000.0;
             double f = 300.0 / frequency;
@@ -430,6 +496,108 @@ namespace DiffractionLossLib
             L_b = L_uc + ((1.0 - Math.Exp(-L_uc / 6.0)) * (10.0 + (0.02 * d)));
 
             return L_b;
+        }
+
+        // equation 58
+        protected double GetV_1(List<Point> points)
+        {
+            double v_1 = 0.0;
+
+            double d = path.EllipsoidalDistance / 1000.0;
+
+            // intermediate points are 1 .. n-2, 0 is Tx and n-1 is Rx
+            for (int i = 1; i < points.Count; i++)
+            {
+                double d_i = (i == points.Count - 1) ? d : i * distanceBetweenPoints / 1000.0;
+                double d_previous = (i - 1) * distanceBetweenPoints / 1000.0;
+
+                double h_i = (points[i].height ?? 0.0);
+                double h_previous = (points[i - 1].height ?? 0.0);
+
+                v_1 += (d_i - d_previous) * (h_i + h_previous);
+            }
+
+            return v_1;
+        }
+
+        // equation 59
+        protected double GetV_2(List<Point> points)
+        {
+            double v_2 = 0.0;
+
+            double d = path.EllipsoidalDistance / 1000.0;
+
+            // intermediate points are 1 .. n-2, 0 is Tx and n-1 is Rx
+            for (int i = 1; i < points.Count; i++)
+            {
+                double d_i = (i == points.Count - 1) ? d : i * distanceBetweenPoints / 1000.0;
+                double d_previous = (i - 1) * distanceBetweenPoints / 1000.0;
+
+                double h_i = points[i].height ?? 0.0;
+                double h_previous = Convert.ToDouble(points[i - 1].height ?? 0.0);
+
+                v_2 += (d_i - d_previous) * ((h_i * (2 * d_i + d_previous)) + (h_previous * (d_i + (2 * d_previous))));
+            }
+
+            return v_2;
+        }
+
+        // equation 60a
+        protected double GetTransmitterInitialProvisionalHeight(double v_1, double v_2)
+        {
+            double d = path.EllipsoidalDistance / 1000.0;
+
+            double h_stip = ((2.0 * v_1 * d) - v_2) / Math.Pow(d, 2.0);
+
+            return h_stip;
+        }
+
+        // equation 60b
+        protected double GetReceiverInitialProvisionalHeight(double v_1, double v_2)
+        {
+            double d = path.EllipsoidalDistance / 1000.0;
+
+            double h_srip = (v_2 - (v_1 * d)) / Math.Pow(d, 2.0);
+
+            return h_srip;
+        }
+
+        // equation 61a,b,c,d
+        protected (double, double, double) GetObstructionAndElevations(List<Point> points, double TxAntennaeHeight, double RxAntennaeHeight)
+        {
+            // first point is Tx
+            double h_ts = (points.First().height ?? 0.0) + TxAntennaeHeight;
+
+            // last point is Rx
+            double h_rs = (points.Last().height ?? 0.0) + RxAntennaeHeight;
+
+            double d = path.EllipsoidalDistance / 1000.0;
+            
+            double? h_obs = null;
+            double? a_obt = null;
+            double? a_obr = null;
+
+            // intermediate points are 1 .. n-2, 0 is Tx and n-1 is Rx
+            for (int i = 1; i < points.Count - 1; i++)
+            {
+                double d_i = i * distanceBetweenPoints / 1000.0;
+                double h_i = (points[i].height ?? 0.0);
+
+                // equation 61a/61d
+                double h_obi = h_i - ((h_ts * (d - d_i)) + (h_rs * d_i) )/ d;
+                // equation 61a
+                h_obs = (h_obi > h_obs || h_obs == null) ? h_obi : h_obs;
+
+                // equation 61b
+                double a_obti = h_obi / d_i;
+                a_obt = (a_obti > a_obt || a_obt == null) ? a_obti : a_obt;
+
+                // equation 61c
+                double a_obri = h_obi / (d - d_i);
+                a_obr = (a_obri > a_obr || a_obr == null) ? a_obri : a_obr;
+            }
+
+            return (h_obs ?? 0.0, a_obt ?? 0.0, a_obr ?? 0.0);
         }
 
         #endregion

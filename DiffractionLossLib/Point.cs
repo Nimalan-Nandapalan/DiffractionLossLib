@@ -11,7 +11,7 @@ namespace DiffractionLossLib
     public class Point
     {
         public GlobalCoordinates coordinate;
-        public int? height;
+        public double? height;
 
 
         public Point()
@@ -20,13 +20,13 @@ namespace DiffractionLossLib
             height = null;
         }
 
-        public Point(GlobalCoordinates _coordinate, int? _height)
+        public Point(GlobalCoordinates _coordinate, double? _height)
         {
             coordinate = new GlobalCoordinates(_coordinate.Latitude, _coordinate.Longitude);
             height = _height;
         }
 
-        public Point(double lat, double lon, int? _height)
+        public Point(double lat, double lon, double? _height)
         {
             coordinate = new GlobalCoordinates(new Angle(lat), new Angle(lon));
             height = _height;

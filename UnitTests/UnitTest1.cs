@@ -33,78 +33,99 @@ namespace UnitTests
         private const int rounding = 7;
 
         [TestMethod]
-        public void Case01()
+        public void ActualTerrainCase01()
         {
             double expectedLoss = 32.84284766;
 
-            SetupLibrary(50, 8500, @".\Path1.csv");
+            List<Point> points = new List<Point>();
+            SetupLibrary(50, 8500, @".\Path1.csv", ref points);
             double TxAntennaeHeight = 30;
             double RxAntennaeHeight = 30;
             double frequency = 1000;
 
-            double L_b = DoCalculations(TxAntennaeHeight, RxAntennaeHeight, frequency);
+            double L_ba = CalculateActualTerrain(points, TxAntennaeHeight, RxAntennaeHeight, frequency);
             
-            Assert.AreEqual(Math.Round(expectedLoss, rounding), Math.Round(L_b, rounding));
+            Assert.AreEqual(Math.Round(expectedLoss, rounding), Math.Round(L_ba, rounding));
         }
 
         [TestMethod]
-        public void Case02()
+        public void SmoothProfileCase01()
+        {
+            double expectedLoss = 13.7484048434102;
+
+            List<Point> points = new List<Point>();
+            SetupLibrary(50, 8500, @".\Path1.csv", ref points);
+            double TxAntennaeHeight = 30;
+            double RxAntennaeHeight = 30;
+            double frequency = 1000;
+
+            double L_bs = CalculateSmoothProfile(points, TxAntennaeHeight, RxAntennaeHeight, frequency);
+
+            Assert.AreEqual(Math.Round(expectedLoss, rounding), Math.Round(L_bs, rounding));
+        }
+
+        [TestMethod]
+        public void ActualTerrainCase02()
         {
             double expectedLoss = 37.229036;
 
-            SetupLibrary(50, 8500, @".\Path1.csv");
+            List<Point> points = new List<Point>();
+            SetupLibrary(50, 8500, @".\Path1.csv", ref points);
             double TxAntennaeHeight = 50;
             double RxAntennaeHeight = 10;
             double frequency = 2500;
 
-            double L_b = DoCalculations(TxAntennaeHeight, RxAntennaeHeight, frequency);
+            double L_ba = CalculateActualTerrain(points, TxAntennaeHeight, RxAntennaeHeight, frequency);
 
-            Assert.AreEqual(Math.Round(expectedLoss, rounding), Math.Round(L_b, rounding));
+            Assert.AreEqual(Math.Round(expectedLoss, rounding), Math.Round(L_ba, rounding));
         }
 
         [TestMethod]
-        public void Case10()
+        public void ActualTerrainCase10()
         {
             double expectedLoss = 17.62040631;
 
-            SetupLibrary(50, 8500, @".\Path3.csv");
+            List<Point> points = new List<Point>();
+            SetupLibrary(50, 8500, @".\Path3.csv", ref points);
             double TxAntennaeHeight = 30;
             double RxAntennaeHeight = 30;
             double frequency = 1000;
 
-            double L_b = DoCalculations(TxAntennaeHeight, RxAntennaeHeight, frequency);
+            double L_ba = CalculateActualTerrain(points, TxAntennaeHeight, RxAntennaeHeight, frequency);
 
-            Assert.AreEqual(Math.Round(expectedLoss, rounding), Math.Round(L_b, rounding));
+            Assert.AreEqual(Math.Round(expectedLoss, rounding), Math.Round(L_ba, rounding));
         }
 
         [TestMethod]
-        public void Case16()
+        public void ActualTerrainCase16()
         {
             double expectedLoss = 7.870985135;
 
-            SetupLibrary(50, 8500, @".\Path4.csv");
+            List<Point> points = new List<Point>();
+            SetupLibrary(50, 8500, @".\Path4.csv", ref points);
             double TxAntennaeHeight = 30;
             double RxAntennaeHeight = 30;
             double frequency = 1000;
 
-            double L_b = DoCalculations(TxAntennaeHeight, RxAntennaeHeight, frequency);
+            double L_ba = CalculateActualTerrain(points, TxAntennaeHeight, RxAntennaeHeight, frequency);
 
-            Assert.AreEqual(Math.Round(expectedLoss, rounding), Math.Round(L_b, rounding));
+            Assert.AreEqual(Math.Round(expectedLoss, rounding), Math.Round(L_ba, rounding));
         }
 
         [TestMethod]
-        public void Case17()
+        public void ActualTerrainCase17()
         {
             double expectedLoss = 0.0;
 
-            SetupLibrary(50, 8500, @".\Path4.csv");
+            List<Point> points = new List<Point>();
+            SetupLibrary(50, 8500, @".\Path4.csv", ref points);
             double TxAntennaeHeight = 50;
             double RxAntennaeHeight = 10;
             double frequency = 2500;
 
-            double L_b = DoCalculations(TxAntennaeHeight, RxAntennaeHeight, frequency);
+            double L_ba = CalculateActualTerrain(points, TxAntennaeHeight, RxAntennaeHeight, frequency);
 
-            Assert.AreEqual(Math.Round(expectedLoss, rounding), Math.Round(L_b, rounding));
+            Assert.AreEqual(Math.Round(expectedLoss, rounding), Math.Round(L_ba, rounding));
         }
 
         [TestMethod]
@@ -112,22 +133,15 @@ namespace UnitTests
         {
             double expectedLoss = 1.52919291257699;
 ;
-
-            SetupLibrary(50, 8500, @".\Path5.csv");
+            List<Point> points = new List<Point>();
+            SetupLibrary(50, 8500, @".\Path5.csv", ref points);
             double TxAntennaeHeight = 5;
             double RxAntennaeHeight = 5;
             double frequency = 1000;
 
-            /* 
-             * This is simple path I created to compute manually and debug my output
-             * 
-             * 
-             * 
-             */
+            double L_ba = CalculateActualTerrain(points, TxAntennaeHeight, RxAntennaeHeight, frequency);
 
-            double L_b = DoCalculations(TxAntennaeHeight, RxAntennaeHeight, frequency);
-
-            Assert.AreEqual(Math.Round(expectedLoss, rounding), Math.Round(L_b, rounding));
+            Assert.AreEqual(Math.Round(expectedLoss, rounding), Math.Round(L_ba, rounding));
         }
 
         private static Point newPointFromCsv(string csvLine)
@@ -140,7 +154,7 @@ namespace UnitTests
             return p;
         }
 
-        private void SetupLibrary(double gap, double earthRadius, string data)
+        private void SetupLibrary(double gap, double earthRadius, string data, ref List<Point> points)
         {
             UseDefaultValues();
             mode = LibraryMode.Test;
