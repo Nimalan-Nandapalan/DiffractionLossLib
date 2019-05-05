@@ -166,9 +166,16 @@ namespace DiffractionLossLib
 
             double L_ba = CalculateActualTerrain(points, TxAntennaeHeight, RxAntennaeHeight, frequency);
 
-            double L_bs = CalculateSmoothProfile(points, TxAntennaeHeight, RxAntennaeHeight, frequency);
+            double h_mts;
+            double h_mrs;
+            double L_bs = CalculateSmoothProfile(points, TxAntennaeHeight, RxAntennaeHeight, frequency, out h_mts, out h_mrs);
 
-            return L_ba;
+            double L_sph = CalculateSphericalEarth(h_mts, h_mrs, frequency);
+
+            // Equation 66
+            double L = CalculateLoss(L_ba, L_bs, L_sph);
+
+            return L;
         }
 
 
@@ -224,7 +231,7 @@ namespace DiffractionLossLib
             return L_b;
         }
 
-        protected double CalculateSmoothProfile(List<Point> points, double TxAntennaeHeight, double RxAntennaeHeight, double frequency)
+        protected double CalculateSmoothProfile(List<Point> points, double TxAntennaeHeight, double RxAntennaeHeight, double frequency, out double h_mts, out double h_mrs)
         {
             // equation 58
             double v_1 = GetV_1(points);
@@ -277,11 +284,11 @@ namespace DiffractionLossLib
 
             // equation 64a
             double h_ts = (points.First().height ?? 0.0) + TxAntennaeHeight;
-            double h_mts = h_ts - h_st;      
+            h_mts = h_ts - h_st;      
 
             // equation 64b
             double h_rs = (points.Last().height ?? 0.0) + RxAntennaeHeight;
-            double h_mrs = h_rs - h_sr;
+            h_mrs = h_rs - h_sr;
 
             // create the smooth profile points
             List<Point> smoothProfilePoints = new List<Point>();
@@ -295,6 +302,78 @@ namespace DiffractionLossLib
             double L_bs = CalculateActualTerrain(smoothProfilePoints, 0.0, 0.0, frequency);
 
             return L_bs;
+        }
+
+        protected double CalculateSphericalEarth(double h_mts, double h_mrs, double frequency)
+        {
+            double L_sph = 0.0;
+
+            double h_1 = h_mts;
+            double h_2 = h_mrs;
+
+            double a = effectiveEarthRadius;
+
+            double d = path.EllipsoidalDistance / 1000.0;
+
+            // equation 21
+            double d_loss = Math.Sqrt(2.0 * a) * (Math.Sqrt(h_1 / 1000.0) + Math.Sqrt(h_2 / 1000.0));
+
+            if ( d >= d_loss)
+            {
+                // Section 3.1.1
+                /* 
+                 * For our use case can skip a section here and use Beta = 1. 
+                 * Calculating the electrical influence will be a feature for the next release.
+                 */
+                //(double K_H, double K_V) = CalculateEletricalInfluence();
+
+                L_sph = CalculateDiffractionLossForSphericalEarth(d, a, h_1, h_2, frequency, 1.0);
+
+                return L_sph;
+            }
+            else
+            {
+                // Section 3.2
+                (double h, double h_req) = CalculateClearanceHeights(a, d, h_1, h_2, frequency);
+
+                if (h > h_req)
+                {
+                    L_sph = 0.0;
+
+                    return L_sph;
+                }
+
+                // equation 24
+                double a_em = 0.5 * Math.Pow(d / (Math.Sqrt(h_1 / 1000.0) + Math.Sqrt(h_2 / 1000.0)), 2.0);
+
+                double A_h = CalculateDiffractionLossForSphericalEarth(d, a_em, h_1, h_2, frequency, 1.0);
+
+                if (A_h < 0)
+                {
+                    L_sph = 0.0;
+
+                    return L_sph;
+                }
+                else
+                {
+                    L_sph = (1.0 - (h / h_req)) * A_h;
+                }
+            }
+
+            return L_sph;
+        }
+
+        // equation 66
+        protected double CalculateLoss(double L_ba, double L_bs, double L_sph)
+        {
+            /*
+             * Developer's Note: Compared to the validation data the value of L_sph appears to be the negative value required. 
+             * So I'm using -L_sph here despite Equation 66 being written as L = L_ba + max(L_sph - L_bs, 0)
+             * This requires some further investigation.
+             */ 
+            double L = L_ba + ((-L_sph - L_bs > 0) ? -L_sph - L_bs : 0.0);
+
+            return L;
         }
 
         public List<Point> GenerateIntermediateProfilePoints(GlobalCoordinates start, GlobalCoordinates end)
@@ -598,6 +677,101 @@ namespace DiffractionLossLib
             }
 
             return (h_obs ?? 0.0, a_obt ?? 0.0, a_obr ?? 0.0);
+        }
+
+        protected (double, double) CalculateEletricalInfluence()
+        {
+            //TODO:
+            double K_H = 0.0;
+
+            double K_V = K_H + 0.0;
+
+            return (K_H, K_V);
+        }
+
+        protected (double, double) CalculateClearanceHeights(double a, double d, double h_1, double h_2, double frequency)
+        {
+            double f = 300.0 / frequency;
+
+            // equation 22e
+            double m = Math.Pow(d, 2.0) / ( 4 * a * (h_1 + h_2) );
+
+            // equation 22d
+            double c = (h_1 - h_2) / (h_1 + h_2);
+
+            // equation 22c
+            double b = 2.0 * Math.Sqrt((m + 1) / (3 * m))
+                * Math.Cos(
+                    (Math.PI / 3.0)
+                    + (1.0 / 3.0 * Math.Acos(
+                        ((3.0 * c) / 2.0)
+                        * Math.Sqrt((3.0 * m) / Math.Pow((m + 1), 3.0))
+                        )
+                    )
+                );
+
+            // equation 22a
+            double d_1 = (d * (1 + b)) / 2.0;
+
+            // equation 22b
+            double d_2 = d - d_1;
+
+            double tmp1 = d_2 * (h_1 - Math.Pow(d_1, 2.0)) / (2 * a);
+            double tmp2 = d_1 * (h_2 - Math.Pow(d_2, 2.0)) / (2 * a);
+
+            double h = (tmp1 + tmp2)/d;
+
+            // equaftion 23
+            double h_req = 0.552 * Math.Sqrt((d_1 * d_2 * f) / d);
+
+            return (h, h_req);
+        }
+
+        protected double CalculateDiffractionLossForSphericalEarth(double d, double a_e, double h_1, double h_2, double f, double Beta)
+        {
+            // equation 14a
+            double X = 2.188 * Beta * Math.Pow(f, 1.0 / 3.0) * Math.Pow(a_e, -2.0 / 3.0) * d;
+
+            // equation 15a
+            double Y = 9.575 * 0.001 * Beta * Math.Pow(f, 2.0 / 3.0) * Math.Pow(a_e, -1.0 / 3.0);
+            double Y_1 = Y * h_1;
+            double Y_2 = Y * h_2;
+
+            Func<double,double> F = (X >= 1.6) ? (Func<double, double>)Equation17a : (Func<double,double>)Equation17b;
+
+            double B_1 = Beta * Y_1;
+            Func<double, double> G_1 = (B_1 > 2.0) ? (Func<double, double>)Equation18 : (Func<double, double>)Equation18a;
+
+            double B_2 = Beta * Y_2;
+            Func<double, double> G_2 = (B_2 > 2.0) ? (Func<double, double>)Equation18 : (Func<double, double>)Equation18a;
+
+            double L_sph = F(X) + G_1(B_1) + G_2(B_2);
+
+            return L_sph;
+        }
+
+        protected static double Equation17a(double X)
+        {
+            double F = 11.0 + (10 * Math.Log10(X)) - (17.6 * X);
+            return F;
+        }
+
+        protected static double Equation17b(double X)
+        {
+            double F = (-20.0 * Math.Log10(X)) - (5.6499 * Math.Pow(X, 1.425));
+            return F;
+        }
+
+        protected static double Equation18(double B)
+        {
+            double G = (17.6 * Math.Sqrt(B - 1.1)) - (5 * Math.Log10(B - 1.1)) - 8.0;
+            return G;
+        }
+
+        protected static double Equation18a(double B)
+        {
+            double G = 20.0 * Math.Log10(B + (0.1 * Math.Pow(B, 3.0)));
+            return G;
         }
 
         #endregion

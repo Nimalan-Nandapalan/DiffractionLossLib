@@ -19,67 +19,7 @@ namespace DiffractionLossExcel
 {
     public class DiffractionLossExcell
     {
-        private static string foo { get; set; }
         private static DiffractionLossCalculator diffLossCalc;
-
-        #region test functions
-        [ExcelFunction(Description = "My first .NET function")]
-        public static string SayHello(string name)
-        {
-            MessageBox.Show($"Hello {name}");
-
-            return "Hello " + name;
-        }
-
-        [ExcelFunction(Description = "My first .NET function")]
-        public static string FooA(string name)
-        {
-            MessageBox.Show($"foo is {foo}");
-
-            foo = "potato";
-
-            return foo;
-        }
-
-        [ExcelFunction(Description = "My first .NET function")]
-        public static string FooB(string name)
-        {
-            foo = "not a Potato";
-
-            return foo;
-        }
-
-        [ExcelFunction(Description = "Sets cell below to 'Potato'",  IsMacroType = true)]
-        public static void Potato( [ExcelArgument(AllowReference = true)] object _arg)
-        {
-            Excel.Application app = (Excel.Application)ExcelDnaUtil.Application;
-            Excel.Range range = app.ActiveCell;
-
-            ExcelReference targetCell;
-
-            targetCell = _arg as ExcelReference;
-            //targetCell = new ExcelReference(range.Row - 1 + 1, range.Column - 1);
-
-            ExcelAsyncUtil.QueueAsMacro( () => { targetCell.SetValue("Potato"); } );
-
-            //return $"=Potato({targetCell.ToString()})";
-            return;
-        }
-               
-        [ExcelFunction(Description = "Array value function")]
-        public static object MakeList()
-        {
-            object[,] list = new object[12,2];
-
-            for (int i = 0; i < 12; i++)
-            { 
-                list[i, 0] = i;
-                list[i, 1] = i * i;
-            }
-
-            return ArrayResizer.Resize(list);
-        }
-        #endregion
 
         #region DiffractionLossLib functions
 
