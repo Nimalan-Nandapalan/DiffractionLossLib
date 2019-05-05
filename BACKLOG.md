@@ -2,6 +2,7 @@
 
 ## New Features:
 * Electrical Influence (K) of the Earth
+* Console App interface (CLI tool)
 
 ## Nice to have: 
 Excel ribbon for dll configuration
