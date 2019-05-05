@@ -12,7 +12,7 @@ If you find this software useful please consider donating to help support its ma
     <a href="https://www.paypal.me/DonateToFOSS"></a>
         <img src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" alt="Donate" />
     </a>
-</p>>
+</p>
 
 ## Sources:
 This software makes use of the following works:
