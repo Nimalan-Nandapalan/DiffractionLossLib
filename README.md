@@ -3,16 +3,20 @@
 # DiffractionLossLib v0.1
 A library to assist with difrraction of loss calculations
 
-This library implements [ITU P526.14](https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.526-14-201801-I!!PDF-E.pdf)
-
+This library implements [ITU P526.14](https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.526-14-201801-I!!PDF-E.pdf):<br />
 https://www.itu.int/dms_pubrec/itu-r/rec/p/R-REC-P.526-14-201801-I!!PDF-E.pdf
 
+Please see the wiki for documentation.
+
 If you find this software useful please consider donating to help support its maintenance.
+
+<br />
 <p align="center">
     <a href="https://www.paypal.me/DonateToFOSS"></a>
         <img src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" alt="Donate" />
     </a>
 </p>
+<br />
 
 ## Sources:
 This software makes use of the following works:
