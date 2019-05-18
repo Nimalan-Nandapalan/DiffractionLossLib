@@ -1,6 +1,6 @@
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.me/DonateToFOSS)
 
-# DiffractionLossLib v0.1
+# DiffractionLossLib v0.2
 A library to assist with difrraction of loss calculations.
 
 The current version of the library can be downloaded [here](https://github.com/Nimalan-Nandapalan/DiffractionLossLib/releases/latest).
