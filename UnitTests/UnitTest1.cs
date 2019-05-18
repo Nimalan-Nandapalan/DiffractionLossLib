@@ -25,11 +25,54 @@ namespace UnitTests
 
             Assert.AreEqual(expected, result);
         }
+
+        [TestMethod]
+        public void DebugHeight()
+        {
+            var srtmData = new SRTMData(@"C:\temp\srtm-cache");
+
+            // -38.26192626 144.6653395
+            int? DebugHeight  = srtmData.GetElevation(-38.26192626, 144.6653395);
+
+
+            int expected = 136;
+
+            // -33.47330 151.31728
+            int? result = srtmData.GetElevation(-33.47330, 151.31728);
+            
+            Assert.AreEqual(expected, result);
+        }
     }
 
     [TestClass]
     public class testDiffractionLossLib : DiffractionLossCalculator
     {
+        [TestMethod]
+        public void TestFixHeights()
+        {
+            distanceBetweenPoints = 100.0;
+            List<Point> points = new List<Point>();
+            points.Add(new Point(0.0, 0.0, 65535));
+            points.Add(new Point(0.0, 0.0, 65535));
+            points.Add(new Point(0.0, 0.0, 10));
+            points.Add(new Point(0.0, 0.0, 20));
+            points.Add(new Point(0.0, 0.0, 65535));
+            points.Add(new Point(0.0, 0.0, 65535));
+            points.Add(new Point(0.0, 0.0, 50));
+            points.Add(new Point(0.0, 0.0, 60));
+            points.Add(new Point(0.0, 0.0, 65535));
+
+            double[] expected = new double[] { 10, 10, 10, 20, 30, 40, 50, 60, 60 };
+
+            FixHeights(ref points);
+
+            for (int i = 0; i < points.Count; i++)
+            {
+                Assert.AreEqual(expected[i], points[i].height);
+            }
+
+        }
+
         [TestMethod]
         public void Case01()
         {

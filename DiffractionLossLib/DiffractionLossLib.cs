@@ -400,6 +400,14 @@ namespace DiffractionLossLib
             int? endHeight = srtmData.GetElevation(end.Latitude.Degrees, end.Longitude.Degrees);
             points.Add(new Point(end, endHeight));
 
+            /* 
+             * Perform a sanity check
+             * Occasionally the SRTM library throws up odd values like 65,535 so if we detect values above mount everest (about 8900m) we use the average height between the next points
+             */
+            FixHeights(ref points);
+
+
+
             return points;
         }
 
@@ -809,6 +817,54 @@ namespace DiffractionLossLib
             srtmData = new SRTMData(defaultSrtmCache);
             effectiveEarthRadius = defaultEffectiveEarthRadius;
         }
+
+        protected void FixHeights(ref List<Point> points)
+        {
+            // Check the first point
+            if (points.First().height > 8900)
+            {
+                int j = 1;
+                double nextGoodHeight = points[j].height ?? 8901;
+                while (nextGoodHeight > 8900)
+                {
+                    j++;
+                    nextGoodHeight = points[j].height ?? 8901;
+                }
+                points.First().height = nextGoodHeight;
+            }
+
+            // Check the last point
+            if (points.Last().height > 8900)
+            {
+                int j = points.Count - 1;
+                double lastGoodHeight = points[j].height ?? 8901;
+                while (lastGoodHeight > 8900)
+                {
+                    j--;
+                    lastGoodHeight = points[j].height ?? 8901;
+                }
+                points.Last().height = lastGoodHeight;
+            }
+
+            // Check intermediate points
+            for (int i = 1; i < points.Count - 1; i++)
+            {
+                if (points[i].height > 8900)
+                {
+                    double lastGoodHeight = points[i - 1].height ?? 0;
+                    int j = i+1;
+                    double nextGoodHeight = points[j].height ?? 8901;
+                    while (nextGoodHeight > 8900)
+                    {
+                        j++;
+                        nextGoodHeight = points[j].height ?? 8901;
+                    }
+                    double slope = (nextGoodHeight - lastGoodHeight) / ((j - i + 1) * distanceBetweenPoints);
+                    points[i].height = lastGoodHeight + (slope * distanceBetweenPoints);
+                }
+            }
+        }
+
 
         #endregion
 
